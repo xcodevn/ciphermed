@@ -95,7 +95,7 @@ int readCircuitFromFile(GarbledCircuit *garbledCircuit, char *fileName) {
 	void *storage = malloc(fs);
 	fread(storage, fs, 1, f);
 	fclose(f);
-	buffer->data = storage;
+	buffer->data = (char*)storage;
 	buffer->size = fs;
 	msgpack_unpacked msg;
 	msgpack_unpacked_init(&msg);

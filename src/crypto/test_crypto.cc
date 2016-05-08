@@ -28,10 +28,27 @@
 
 #include <ctime>
 
+#include <sys/time.h>
+#include <stdio.h>
+
+#include <mach/clock.h>
+#include <mach/mach.h>
+
 #include<iostream>
 
 using namespace std;
 using namespace NTL;
+void clock_gettime(struct timespec *ts) {
+  clock_serv_t cclock;
+  mach_timespec_t mts;
+  host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+  clock_get_time(cclock, &mts);
+  mach_port_deallocate(mach_task_self(), cclock);
+  ts->tv_sec = mts.tv_sec;
+  ts->tv_nsec = mts.tv_nsec;
+}
+
+
 
 static void
 test_paillier()
@@ -158,41 +175,41 @@ static void paillier_perf(unsigned int k, unsigned int a_bits, size_t n_iteratio
     struct timespec t0,t1;
 
     vector<mpz_class> ct(n_iteration);
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID,&t0);
+    clock_gettime(&t0);
     for (size_t i = 0; i < n_iteration; i++) {
         mpz_class pt;
         mpz_urandomm(pt.get_mpz_t(),randstate,n.get_mpz_t());
         ct[i] = p.encrypt(pt);
     }
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID,&t1);
+     clock_gettime(&t1);
     uint64_t t = (((uint64_t)t1.tv_sec) - ((uint64_t)t0.tv_sec) )* 1000000000 + (t1.tv_nsec - t0.tv_nsec);
     cerr << "public encryption: "<<  ((double)t/1000000)/n_iteration <<"ms per plaintext" << endl;
 
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID,&t0);
+    clock_gettime(&t0);
     for (size_t i = 0; i < n_iteration; i++) {
         mpz_class pt;
         mpz_urandomm(pt.get_mpz_t(),randstate,n.get_mpz_t());
         pp.encrypt(pt);
     }
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID,&t1);
+    clock_gettime(&t1);
     t = (((uint64_t)t1.tv_sec) - ((uint64_t)t0.tv_sec) )* 1000000000 + (t1.tv_nsec - t0.tv_nsec);
     cerr << "private encryption: "<<  ((double)t/1000000)/n_iteration <<"ms per plaintext" << endl;
 
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID,&t0);
+    clock_gettime(&t0);
     for (size_t i = 0; i < n_iteration; i++) {
         mpz_class pt;
         mpz_urandomm(pt.get_mpz_t(),randstate,n.get_mpz_t());
         pp.fast_encrypt_precompute(pt);
     }
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID,&t1);
+    clock_gettime(&t1);
     t = (((uint64_t)t1.tv_sec) - ((uint64_t)t0.tv_sec) )* 1000000000 + (t1.tv_nsec - t0.tv_nsec);
     cerr << "private encryption with precomputation: "<<  ((double)t/1000000)/n_iteration <<"ms per plaintext" << endl;
 
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID,&t0);
+    clock_gettime(&t0);
     for (size_t i = 0; i < n_iteration; i++) {
         pp.decrypt(ct[i]);
     }
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID,&t1);
+    clock_gettime(&t1);
     t = (((uint64_t)t1.tv_sec) - ((uint64_t)t0.tv_sec) )* 1000000000 + (t1.tv_nsec - t0.tv_nsec);
     cerr << "decryption: "<<  ((double)t/1000000)/n_iteration <<"ms per cyphertext" << endl;
 
@@ -226,21 +243,21 @@ static void paillier_fast_perf(unsigned int k, size_t n_iteration)
     
     vector<mpz_class> ct(n_iteration);
 
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID,&t0);
+    clock_gettime(&t0);
     for (size_t i = 0; i < n_iteration; i++) {
         mpz_class pt;
         mpz_urandomm(pt.get_mpz_t(),randstate,n.get_mpz_t());
         ct[i] = pp.encrypt(pt);
     }
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID,&t1);
+    clock_gettime(&t1);
     t = (((uint64_t)t1.tv_sec) - ((uint64_t)t0.tv_sec) )* 1000000000 + (t1.tv_nsec - t0.tv_nsec);
     cerr << "private encryption with generator precomputations: "<<  ((double)t/1000000)/n_iteration <<"ms per plaintext" << endl;
     
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID,&t0);
+    clock_gettime(&t0);
     for (size_t i = 0; i < n_iteration; i++) {
         pp.decrypt(ct[i]);
     }
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID,&t1);
+    clock_gettime(&t1);
     t = (((uint64_t)t1.tv_sec) - ((uint64_t)t0.tv_sec) )* 1000000000 + (t1.tv_nsec - t0.tv_nsec);
     cerr << "decryption: "<<  ((double)t/1000000)/n_iteration <<"ms per cyphertext" << endl;
     

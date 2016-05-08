@@ -153,10 +153,10 @@ static void fun_with_fhe()
     
     EncryptedArray ea(context, G);
     
-    PlaintextArray p0(ea);
-    PlaintextArray p1(ea);
-    PlaintextArray p2(ea);
-    PlaintextArray p3(ea);
+    NewPlaintextArray p0(ea);
+    NewPlaintextArray p1(ea);
+    NewPlaintextArray p2(ea);
+    NewPlaintextArray p3(ea);
     
     vector<long> values = bitDecomp(3,ea.size());
     cerr << "\n";
@@ -169,7 +169,7 @@ static void fun_with_fhe()
     p1.random();
     p2.random();
 //    p3.random();
-    p3.encode(values);
+    encode(ea, p3, values);
     
     Ctxt c0(publicKey), c1(publicKey), c2(publicKey), c3(publicKey);
     ea.encrypt(c0, publicKey, p0);
@@ -188,10 +188,10 @@ static void fun_with_fhe()
     cerr << "c2 -> " << c2.findBaseLevel() << " , " << c2.getKeyID() << "\n";
     cerr << "c3 -> " << c3.findBaseLevel() << " , " << c3.getKeyID() << "\n";
     
-    PlaintextArray pp0(ea);
-    PlaintextArray pp1(ea);
-    PlaintextArray pp2(ea);
-    PlaintextArray pp3(ea);
+    NewPlaintextArray pp0(ea);
+    NewPlaintextArray pp1(ea);
+    NewPlaintextArray pp2(ea);
+    NewPlaintextArray pp3(ea);
     
     ea.decrypt(c0, secretKey, pp0);
     ea.decrypt(c1, secretKey, pp1);
