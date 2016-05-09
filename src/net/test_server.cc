@@ -9,8 +9,14 @@
 #include <net/server.hh>
 #include <net/protocol_tester.hh>
 
+#include <util/benchmarks.hh>
+
 static void test_basic_server()
 {
+#ifdef BENCHMARK
+    cout << "BENCHMARK flag set" << endl;
+    BENCHMARK_INIT
+#endif
     gmp_randstate_t randstate;
     gmp_randinit_default(randstate);
     gmp_randseed_ui(randstate,time(NULL));

@@ -154,8 +154,17 @@ void Client::get_fhe_context()
     
     Protobuf::FHE_Context c = readMessageFromSocket<Protobuf::FHE_Context>(socket_);
     cout << "Received FHE Context" << endl;
-    fhe_context_ = create_from_message(c);
+
+    std::istringstream stream(c.content());
     
+    unsigned long m, p, r;
+    vector<long> gens, ords;
+    readContextBase(stream, m, p, r, gens, ords);
+    
+    fhe_context_ = new FHEcontext(m, p, r, gens, ords);
+    
+    stream >> (*fhe_context_);
+
     // we suppose d > 0
     fhe_G_ = makeIrredPoly(FHE_p, FHE_d);
 }

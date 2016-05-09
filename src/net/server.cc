@@ -127,8 +127,9 @@ void Server::run()
             Server_session *c = create_new_server_session(socket);
             
             cout << "Start new connexion: " << c->id() << endl;
-            thread t (&Server_session::run_session,c);
-            t.detach();
+            c->run_session();
+            // thread t (&Server_session::run_session,c);
+            // t.detach();
         }
     }
     catch (std::exception& e)

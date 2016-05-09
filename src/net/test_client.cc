@@ -11,8 +11,16 @@
 
 #include <util/util.hh>
 
+#include <util/benchmarks.hh>
+
 static void test_basic_client(const string &hostname)
 {
+
+#ifdef BENCHMARK
+    cout << "BENCHMARK flag set" << endl;
+    BENCHMARK_INIT
+#endif
+
     try
     {
         

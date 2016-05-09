@@ -32,7 +32,7 @@ CXXWARNINGS := -Wall -Wpointer-arith -Wendif-labels -Wformat=2 -Wextra -Wwrite-s
 CXXFLAGS := $(CXXOPT) -fno-strict-aliasing -fwrapv -fPIC \
         -maes -msse4 \
         $(CXXWARNINGS) -D_GNU_SOURCE -std=c++0x  \
-	    -fno-omit-frame-pointer -I$(TOP) -I$(SHAIFHEPATH) -I$(NTLINCPATH) -I$(JSONCPP) -I/usr/local/include
+	    -fno-omit-frame-pointer -I$(TOP) -I$(SHAIFHEPATH) -I$(NTLINCPATH) -I$(JSONCPP) -I/usr/local/include -ftls-model
 
 
 LDFLAGS	 := -lpthread -lgmp -lgmpxx
