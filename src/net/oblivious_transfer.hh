@@ -48,8 +48,8 @@ public:
 
     static bool GMP_Init(int secparam);
     static bool GMP_Cleanup();
-    
-    static void mpz_export_padded(char* pBufIdx, int field_size, mpz_t to_export);
+
+    static void mpz_export_padded(char* pBufIdx, size_t field_size, mpz_t to_export);
 
     static void init(int secparam){ GMP_Init(secparam); };
     static bool sender(int nOTs, char *messages, tcp::socket &socket, uint8_t block_size = SHA1_BYTES);

@@ -7,8 +7,8 @@ all:    $(OBJDIR)/libmpc.so
 $(OBJDIR)/libmpc.so: $(MPCOBJS) $(OBJDIR)/libcipher.so $(OBJDIR)/libjustGarble.so
 	$(CXX) -shared -o $@ $(MPCOBJS) $(SHAIFHEPATH)/fhe.a $(LDFLAGS) -lgmp -lgmpxx -lcipher -ljustGarble -lntl -lgf2x
 
-all:	$(OBJDIR)/mpc/test_mpc 
+all:	$(OBJDIR)/mpc/test_mpc
 $(OBJDIR)/mpc/test_mpc: $(OBJDIR)/mpc/test_mpc.o $(OBJDIR)/libmpc.so $(OBJDIR)/libcipher.so
 	$(CXX) $< -o $@  $(SHAIFHEPATH)/fhe.a $(LDFLAGS) -lmpc -lcipher\
-	   -L$(NTLLIBPATH) -lntl -lgmp  -lgf2x 
+	    -lntl -lgmp  -lgf2x 
 # vim: set noexpandtab:

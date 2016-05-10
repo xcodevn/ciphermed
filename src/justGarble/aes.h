@@ -7,7 +7,7 @@
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -60,7 +60,10 @@ extern "C" {
 #include <emmintrin.h>              /* SSE2 instructions               */
 
 // #include <openssl/aes.h>
+#ifndef flagBLK
+#define flagBLK
 typedef __m128i block;
+#endif
     
 typedef struct { __m128i rd_key[15]; int rounds; } AES_KEY;
 #define ROUNDS(ctx) ((ctx)->rounds)
@@ -100,7 +103,7 @@ typedef struct { __m128i rd_key[15]; int rounds; } AES_KEY;
  void AES_ecb_decrypt_blks(block *blks, unsigned nblks, AES_KEY *key);
  void AES_ecb_encrypt_blks_4(block *blks, AES_KEY *key);
 #endif
-    
+
 #ifdef __cplusplus
 }
 #endif

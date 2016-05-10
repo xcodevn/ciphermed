@@ -7,12 +7,12 @@
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
- * 
+ *
  *  ciphermed is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- * 
+ *
  *  You should have received a copy of the GNU General Public License
  *  along with ciphermed.  If not, see <http://www.gnu.org/licenses/>. 2
  *
@@ -29,9 +29,10 @@ public:
     virtual void set_value(const mpz_class &x) = 0;
     virtual size_t bit_length() const { return 0; }
     virtual void set_bit_length(size_t l) = 0;
-    
+
     virtual mpz_class output() const = 0;
     virtual GM gm() const = 0;
+    virtual ~Comparison_protocol_A() {}
 };
 
 // party B has the secret parameters
@@ -42,6 +43,7 @@ public:
     virtual void set_bit_length(size_t l) = 0;
 
     virtual GM_priv gm() const = 0;
+    virtual ~Comparison_protocol_B() {}
 };
 
 // dynamicaly call the right test function

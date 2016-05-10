@@ -62,8 +62,8 @@ void Server::init_needed_keys(unsigned int keysize)
         init_FHE_context();
         init_FHE_key();
     }
-    
-    
+
+
     if (key_deps_desc_.need_client_fhe) {
         init_FHE_context();
     }
@@ -83,9 +83,9 @@ void Server::init_Paillier(unsigned int keysize)
     if (paillier_ != NULL) {
         return;
     }
-    
+
     paillier_ = new Paillier_priv_fast(Paillier_priv_fast::keygen(rand_state_,keysize), rand_state_);
-        
+
 }
 
 void Server::init_FHE_context()
@@ -95,7 +95,7 @@ void Server::init_FHE_context()
     }
     // generate a context. This one should be consisten with the server's one
     // i.e. m, p, r must be the same
-    
+
     fhe_context_ = create_FHEContext(FHE_p,FHE_r,FHE_d,FHE_c,FHE_L,FHE_s,FHE_k,FHE_m);
     // we suppose d > 0
     fhe_G_ = makeIrredPoly(FHE_p, FHE_d);
@@ -115,17 +115,17 @@ void Server::run()
     try
     {
         boost::asio::io_service io_service;
-        
+
         tcp::endpoint endpoint(tcp::v4(), PORT);
         tcp::acceptor acceptor(io_service, endpoint);
-        
+
         for (;;)
         {
             tcp::socket socket(io_service);
             acceptor.accept(socket);
-            
+
             Server_session *c = create_new_server_session(socket);
-            
+
             cout << "Start new connexion: " << c->id() << endl;
             thread t (&Server_session::run_session,c);
             t.detach();
@@ -155,10 +155,10 @@ void Server_session::send_paillier_pk()
 {
     boost::asio::streambuf buff;
     std::ostream buff_stream(&buff);
-    
+
     cout << id_ << ": Send Paillier PK" << endl;
     Protobuf::Paillier_PK pk_message = get_pk_message(&(server_->paillier()));
-    
+
     sendMessageToSocket<Protobuf::Paillier_PK>(socket_,pk_message);
 }
 
@@ -166,10 +166,10 @@ void Server_session::send_gm_pk()
 {
     boost::asio::streambuf buff;
     std::ostream buff_stream(&buff);
-    
+
     cout << id_ << ": Send GM PK" << endl;
     Protobuf::GM_PK pk_message = get_pk_message(&(server_->gm()));
-    
+
     sendMessageToSocket<Protobuf::GM_PK>(socket_,pk_message);
 }
 
@@ -178,7 +178,7 @@ void Server_session::send_fhe_context()
     const FHEcontext &context = server_->fhe_context();
     cout << id_ << ": Send FHE Context" << endl;
     Protobuf::FHE_Context pk_message = convert_to_message(context);
-    
+
     sendMessageToSocket<Protobuf::FHE_Context>(socket_,pk_message);
 }
 
@@ -188,7 +188,7 @@ void Server_session::send_fhe_pk()
     cout << id_ << ": Send FHE PK" << endl;
 
     Protobuf::FHE_PK pk_message = get_pk_message(publicKey);
-    
+
     sendMessageToSocket<Protobuf::FHE_PK>(socket_,pk_message);
 
 }
@@ -221,7 +221,7 @@ void Server_session::get_client_pk_fhe()
     if (client_fhe_pk_) {
         return;
     }
-    
+
     Protobuf::FHE_PK pk = readMessageFromSocket<Protobuf::FHE_PK>(socket_);
     cout << id_ << ": Received FHE PK" << endl;
     client_fhe_pk_ = create_from_pk_message(pk,server_->fhe_context());
@@ -244,7 +244,7 @@ void Server_session::exchange_keys()
     if (key_deps_desc.need_client_paillier) {
         get_client_pk_paillier();
     }
-    
+
     if (key_deps_desc.need_server_fhe ||
         key_deps_desc.need_client_fhe) {
         // if we use FHE, we need to send the context to the client before doing anything
@@ -333,7 +333,7 @@ bool Server_session::enc_comparison(const mpz_class &a, const mpz_class &b, size
 {
     EncCompare_Owner owner = create_enc_comparator_owner(l, comparison_prot);
     owner.set_input(a,b);
-    
+
     return run_enc_comparison_owner(owner);
 }
 
@@ -401,7 +401,7 @@ mpz_class Server_session::enc_comparison_enc_result(const mpz_class &a, const mp
 {
     Rev_EncCompare_Owner owner = create_rev_enc_comparator_owner(l, comparison_prot);
     owner.set_input(a,b);
-    
+
     return run_rev_enc_comparison_owner_enc_result(owner);
 }
 
@@ -417,22 +417,22 @@ vector<bool> Server_session::multiple_enc_comparison(const vector<mpz_class> &a,
     assert(a.size() == b.size());
     size_t n = a.size();
     vector<EncCompare_Owner*> owners(n);
-    
+
     for (size_t i = 0; i < n; i++) {
         owners[i] = new EncCompare_Owner(create_enc_comparator_owner(l, comparison_prot));
         owners[i]->set_input(a[i],b[i]);
     }
-    
+
     unsigned int thread_per_job = ceilf(((float)server_->threads_per_session())/n);
     multiple_exec_enc_comparison_owner(socket_, owners, server_->lambda(), true, thread_per_job);
-    
+
     vector<bool> results(n);
-    
+
     for (size_t i = 0; i < n; i++) {
         results[i] = owners[i]->output();
         delete owners[i];
     }
-    
+
     return results;
 }
 
@@ -440,15 +440,15 @@ vector<bool> Server_session::multiple_enc_comparison(const vector<mpz_class> &a,
 void Server_session::multiple_help_enc_comparison(const size_t n, const size_t &l, COMPARISON_PROTOCOL comparison_prot)
 {
     vector<EncCompare_Helper*> helpers(n);
-    
+
     for (size_t i = 0; i < n; i++) {
         helpers[i] = new EncCompare_Helper(create_enc_comparator_helper(l, comparison_prot));
-        
+
     }
-    
+
     unsigned int thread_per_job = ceilf(((float)server_->threads_per_session())/n);
     multiple_exec_enc_comparison_helper(socket_, helpers, true, thread_per_job);
-    
+
     for (size_t i = 0; i < n; i++) {
         delete helpers[i];
     }
@@ -460,35 +460,35 @@ void Server_session::multiple_rev_enc_comparison(const vector<mpz_class> &a, con
     assert(a.size() == b.size());
     size_t n = a.size();
     vector<Rev_EncCompare_Owner*> owners(n);
-    
+
     for (size_t i = 0; i < n; i++) {
         owners[i] = new Rev_EncCompare_Owner(create_rev_enc_comparator_owner(l, comparison_prot));
         owners[i]->set_input(a[i],b[i]);
     }
-    
+
     unsigned int thread_per_job = ceilf(((float)server_->threads_per_session())/n);
     multiple_exec_rev_enc_comparison_owner(socket_, owners, server_->lambda(), true, thread_per_job);
-    
-    
+
+
     for (size_t i = 0; i < n; i++) {
         delete owners[i];
     }
-    
+
 }
 
 
 vector<bool> Server_session::multiple_help_rev_enc_comparison(const size_t n, const size_t &l, COMPARISON_PROTOCOL comparison_prot)
 {
     vector<Rev_EncCompare_Helper*> helpers(n);
-    
+
     for (size_t i = 0; i < n; i++) {
         helpers[i] = new Rev_EncCompare_Helper(create_rev_enc_comparator_helper(l, comparison_prot));
-        
+
     }
-    
+
     unsigned int thread_per_job = ceilf(((float)server_->threads_per_session())/n);
     multiple_exec_rev_enc_comparison_helper(socket_, helpers, true, thread_per_job);
-    
+
     vector<bool> results(n);
     for (size_t i = 0; i < n; i++) {
         results[i] = helpers[i]->output();
@@ -501,8 +501,8 @@ vector<bool> Server_session::multiple_help_rev_enc_comparison(const size_t n, co
 void Server_session::run_linear_enc_argmax(Linear_EncArgmax_Helper &helper, COMPARISON_PROTOCOL comparison_prot)
 {
     size_t nbits = helper.bit_length();
-    function<Comparison_protocol_B*()> comparator_creator;
-    
+    function<Comparison_protocol_B*()> comparator_creator = nullptr;
+
     if (comparison_prot == LSIC_PROTOCOL) {
         comparator_creator = [this,nbits](){ return new LSIC_B(0,nbits,server_->gm()); };
     }else if (comparison_prot == DGK_PROTOCOL){
@@ -516,8 +516,8 @@ void Server_session::run_linear_enc_argmax(Linear_EncArgmax_Helper &helper, COMP
 void Server_session::run_tree_enc_argmax(Tree_EncArgmax_Helper &helper, COMPARISON_PROTOCOL comparison_prot)
 {
     size_t nbits = helper.bit_length();
-    function<Comparison_protocol_B*()> comparator_creator;
-    
+    function<Comparison_protocol_B*()> comparator_creator = nullptr;
+
     if (comparison_prot == LSIC_PROTOCOL) {
         comparator_creator = [this,nbits](){ return new LSIC_B(0,nbits,server_->gm()); };
     }else if (comparison_prot == DGK_PROTOCOL){
@@ -531,7 +531,7 @@ void Server_session::run_tree_enc_argmax(Tree_EncArgmax_Helper &helper, COMPARIS
 Ctxt Server_session::change_encryption_scheme(const vector<mpz_class> &c_gm)
 {
     EncryptedArray ea(server_->fhe_context(), server_->fhe_G());
-    
+
     return exec_change_encryption_scheme_slots(socket_, c_gm, *client_gm_ ,*client_fhe_pk_, ea, rand_state_);
 }
 
@@ -555,8 +555,8 @@ void Server_session::help_compute_dot_product(const vector<mpz_class> &y, bool e
 
 EncCompare_Owner Server_session::create_enc_comparator_owner(size_t bit_size, COMPARISON_PROTOCOL comparison_prot)
 {
-    Comparison_protocol_B *comparator;
-    
+    Comparison_protocol_B *comparator = nullptr;
+
     if (comparison_prot == LSIC_PROTOCOL) {
         comparator = new LSIC_B(0,bit_size,server_->gm());
     }else if (comparison_prot == DGK_PROTOCOL){
@@ -571,8 +571,8 @@ EncCompare_Owner Server_session::create_enc_comparator_owner(size_t bit_size, CO
 EncCompare_Helper Server_session::create_enc_comparator_helper(size_t bit_size, COMPARISON_PROTOCOL comparison_prot)
 {
 
-    Comparison_protocol_A *comparator;
-    
+    Comparison_protocol_A *comparator = nullptr;
+
     if (comparison_prot == LSIC_PROTOCOL) {
         comparator = new LSIC_A(0,bit_size,*client_gm_);
     }else if (comparison_prot == DGK_PROTOCOL){
@@ -586,8 +586,8 @@ EncCompare_Helper Server_session::create_enc_comparator_helper(size_t bit_size, 
 
 Rev_EncCompare_Owner Server_session::create_rev_enc_comparator_owner(size_t bit_size, COMPARISON_PROTOCOL comparison_prot)
 {
-    Comparison_protocol_A *comparator;
-    
+    Comparison_protocol_A *comparator = nullptr;
+
     if (comparison_prot == LSIC_PROTOCOL) {
         comparator = new LSIC_A(0,bit_size,*client_gm_);
     }else if (comparison_prot == DGK_PROTOCOL){
@@ -595,15 +595,15 @@ Rev_EncCompare_Owner Server_session::create_rev_enc_comparator_owner(size_t bit_
     }else if (comparison_prot == GC_PROTOCOL) {
         comparator = new GC_Compare_A(0,bit_size,*client_gm_, rand_state_);
     }
-    
+
     return Rev_EncCompare_Owner(0,0,bit_size,*client_paillier_,comparator,rand_state_);
 }
 
 
 Rev_EncCompare_Helper Server_session::create_rev_enc_comparator_helper(size_t bit_size, COMPARISON_PROTOCOL comparison_prot)
 {
-    Comparison_protocol_B *comparator;
-    
+    Comparison_protocol_B *comparator = nullptr;
+
     if (comparison_prot == LSIC_PROTOCOL) {
         comparator = new LSIC_B(0,bit_size,server_->gm());
     }else if (comparison_prot == DGK_PROTOCOL){

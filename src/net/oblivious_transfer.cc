@@ -34,7 +34,7 @@ static void hashReturn(char* ret, char* val, int val_len, int ctr) {
     HASH_UPDATE(&sha, (char*) val, val_len);
     HASH_UPDATE(&sha, (char*) &ctr, sizeof(int));
     HASH_FINAL(&sha, (unsigned char *)ret);
-    
+
 }
 
 NPState ObliviousTransfer::m_NPState;
@@ -56,16 +56,16 @@ bool ObliviousTransfer::GMP_Init(int secparam) {
         default:
             mpz_set_str(m_NPState.p, ifcp1024, 16);	mpz_set_str(m_NPState.g, ifcg1024, 16);	mpz_set_str(m_NPState.q, ifcq1024, 16);	m_SecParam = 1024; break;
     }
-    
+
     gmp_randinit_mt (m_NPState.rnd_state );
     m_NPState.field_size = mpz_sizeinbase(m_NPState.p, 2)/8;
     return true;
 }
 
-void ObliviousTransfer::mpz_export_padded(char* pBufIdx, int field_size, mpz_t to_export) {
+void ObliviousTransfer::mpz_export_padded(char* pBufIdx, size_t field_size, mpz_t to_export) {
     size_t size = 0;
     mpz_export(pBufIdx, &size, 1, sizeof(pBufIdx[0]), 0, 0, to_export);
-    
+
     if (size < field_size) {
         for (int i = 0; i + size < field_size; i++) {
             pBufIdx[i] = 0;
@@ -92,35 +92,35 @@ bool ObliviousTransfer::receiver(int nOTs, int *choices, char *ret, tcp::socket 
     int nSndVals = 2;
     char* pBuf = new char[nOTs*m_NPState.field_size];
     int nBufSize = nSndVals * m_NPState.field_size;
-    
+
     mpz_t PK_sigma[nOTs], PK0, ztemp, ztmp;
     mpz_t pK[nOTs];
     mpz_t pDec[nOTs];
     mpz_init(PK0);
     mpz_init(ztemp);
     mpz_init(ztmp);
-    
+
     mpz_class PubKey = 0;
-    
+
     FixedPointExp br(m_NPState.g, m_NPState.p, m_NPState.field_size*8);
-    
+
     for (int k = 0; k < nOTs; k++)
     {
         mpz_init(pK[k]);
         mpz_init(pDec[k]);
         mpz_init(PK_sigma[k]);
-        
+
         //generate random PK_sigmas
         mpz_urandomb(ztmp, m_NPState.rnd_state, m_NPState.field_size*8);
         mpz_mod(pK[k], ztmp, m_NPState.q);
         br.powerMod(PK_sigma[k], pK[k]);
     }
-    
+
 //    socket.Receive(pBuf, nBufSize);
     read_byte_string_from_socket(socket, pBuf, nBufSize);
 
     char* pBufIdx = pBuf;
-    
+
     mpz_t pC[nSndVals];
     for(int u = 0; u < nSndVals; u++)
     {
@@ -128,7 +128,7 @@ bool ObliviousTransfer::receiver(int nOTs, int *choices, char *ret, tcp::socket 
         mpz_import(pC[u], m_NPState.field_size, 1, sizeof(pBuf[0]), 0, 0, pBufIdx);
         pBufIdx += m_NPState.field_size;
     }
-    
+
     //====================================================
     // N-P receiver: send pk0
     pBufIdx = pBuf;
@@ -136,7 +136,7 @@ bool ObliviousTransfer::receiver(int nOTs, int *choices, char *ret, tcp::socket 
     for(int k=0; k<nOTs; k++)
     {
         choice = choices[k];
-        
+
         if( choice != 0 )
         {
             mpz_invert(ztmp, PK_sigma[k], m_NPState.p);
@@ -149,12 +149,12 @@ bool ObliviousTransfer::receiver(int nOTs, int *choices, char *ret, tcp::socket 
             mpz_set(PubKey.get_mpz_t(), PK_sigma[k]);
 //            mpz_set(PK0, PK_sigma[k]);
         }
-        
+
         mpz_export_padded(pBufIdx, m_NPState.field_size, PubKey.get_mpz_t());
 //        mpz_export_padded(pBufIdx, m_NPState.field_size, PK0);
         pBufIdx += m_NPState.field_size;
     }
-    
+
 //    socket.Send(pBuf, nOTs * m_NPState.field_size);
     write_byte_string_to_socket(socket, pBuf, nOTs * m_NPState.field_size);
 
@@ -170,46 +170,46 @@ bool ObliviousTransfer::receiver(int nOTs, int *choices, char *ret, tcp::socket 
         pbr.powerMod(pDec[k], pK[k]);
         mpz_export_padded(pBuf, m_NPState.field_size, pDec[k]);
         hashReturn(hashVar, pBuf, m_NPState.field_size, k);
-        
+
         for (int i = 0; i < block_size; i++) {
             retPtr[i] = hashVar[i];
         }
 
         retPtr += block_size;
     }
-    
+
     delete [] pBuf;
     delete [] hashVar;
-    
+
     char *hashBuf = new char[nOTs * block_size * nSndVals];
     read_byte_string_from_socket(socket, hashBuf, nOTs * block_size * nSndVals);
 
-    
+
     char *hashBufPtr = hashBuf;
     char *chosenHash;
-    
-    
-    
+
+
+
     retPtr = ret;
     for (int k = 0; k < nOTs; k++) {
         choice = choices[k];
         chosenHash = hashBufPtr;
-        
+
 //        for (size_t u = 0; i < choice; u++) {
             chosenHash += choice*block_size;
 //        }
-        
+
         // unmask the message with the hash
         for (int i = 0; i < block_size; i++) {
             retPtr[i] ^= chosenHash[i];
         }
-        
-        
+
+
         hashBufPtr += nSndVals*block_size;
         retPtr += block_size;
     }
 
-    
+
     return true;
 }
 
@@ -223,24 +223,24 @@ bool ObliviousTransfer::sender(int nOTs, char *messages, tcp::socket &socket, ui
     int nSndVals = 2;
 
     mpz_t pC[nSndVals], pCr[nSndVals], r, ztmp, ztmp2, PK0r, PKr;
-    
+
     mpz_init(r);
     mpz_init(ztmp);
     mpz_init(ztmp2);
     mpz_init(PK0r);
     mpz_init(PKr);
-    
+
     for(int u = 0; u < nSndVals; u++)
     {
         mpz_init(pC[u]);
         mpz_init(pCr[u]);
     }
-    
+
     //random C1
     mpz_urandomb(ztmp, m_NPState.rnd_state, m_NPState.field_size*8);
     mpz_mod(r, ztmp, m_NPState.q);
     mpz_powm(pC[0], m_NPState.g, r, m_NPState.p);
-    
+
     //random C(i+1)
     for(int u = 1; u < nSndVals; u++)
     {
@@ -248,7 +248,7 @@ bool ObliviousTransfer::sender(int nOTs, char *messages, tcp::socket &socket, ui
         mpz_mod(ztmp2, ztmp, m_NPState.q);
         mpz_powm_ui(pC[u], ztmp2, 2, m_NPState.p);
     }
-    
+
     //====================================================
     // Export the generated C_1-C_nSndVals to a BYTE vector and send them to the receiver
     int nBufSize = nSndVals * m_NPState.field_size;
@@ -267,7 +267,7 @@ bool ObliviousTransfer::sender(int nOTs, char *messages, tcp::socket &socket, ui
     {
         mpz_powm(pCr[u], pC[u], r, m_NPState.p);
     }
-    
+
     //====================================================
     // N-P sender: receive pk0
     nBufSize = m_NPState.field_size * nOTs;
@@ -282,7 +282,7 @@ bool ObliviousTransfer::sender(int nOTs, char *messages, tcp::socket &socket, ui
         mpz_import(pPK0[k], m_NPState.field_size, 1, sizeof(pBufIdx[0]), 0, 0, pBufIdx);
         pBufIdx += m_NPState.field_size;
     }
-    
+
     delete pBuf;
     pBuf = new char[m_NPState.field_size*nSndVals];
     char *hashBuf = new char[nOTs * block_size * nSndVals];
@@ -311,7 +311,7 @@ bool ObliviousTransfer::sender(int nOTs, char *messages, tcp::socket &socket, ui
                 mpz_mod(PKr, ztmp2, m_NPState.p);
                 mpz_export_padded(pBufIdx, m_NPState.field_size, PKr);
             }
-            
+
             // compute the hash of PK_u^r
             hashReturn(hashVar, pBufIdx, m_NPState.field_size, k);
 
@@ -323,7 +323,7 @@ bool ObliviousTransfer::sender(int nOTs, char *messages, tcp::socket &socket, ui
             pBufIdx += m_NPState.field_size;
         }
     }
-    
+
     write_byte_string_to_socket(socket, hashBuf, nOTs * block_size * nSndVals);
 
     delete [] hashBuf;

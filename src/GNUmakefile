@@ -1,8 +1,6 @@
 -include config.mk
 
 SHAIFHEPATH ?= $(HOME)/HElib/src
-NTLLIBPATH ?= $(HOME)/ntl-6.0.0-bin/lib
-NTLINCPATH ?= $(HOME)/ntl-6.0.0-bin/include
 JSONCPP ?= /usr/include/jsoncpp
 
 L_BOOST_SYSTEM ?= -lboost_system
@@ -26,13 +24,16 @@ TOP	 := $(shell echo $${PWD-`pwd`})
 SHARED_OBJDIR = $(TOP)/$(OBJDIR)
 
 
-CXX	 := clang++
-CXXWARNINGS := -Wall -Wpointer-arith -Wendif-labels -Wformat=2 -Wextra -Wwrite-strings -Wno-unused-parameter -Wno-ignored-qualifiers -Wmissing-declarations -Woverloaded-virtual -Wunreachable-code
+CXX	 = /usr/local/Cellar/llvm/3.6.2/bin/clang++
+CC	 = /usr/local/Cellar/llvm/3.6.2/bin/clang
+CXXWARNINGS := -Wall -Wpointer-arith -Wendif-labels -Wformat=2 -Wextra -Wwrite-strings -Wno-unused-parameter \
+				-Wno-ignored-qualifiers -Wmissing-declarations -Woverloaded-virtual -Wunreachable-code -Wno-deprecated-declarations \
+				-Wno-unused-function -Wno-unused-variable
 
-CXXFLAGS := $(CXXOPT) -fno-strict-aliasing -fwrapv -fPIC \
-        -maes -msse4 \
+
+CXXFLAGS := $(CXXOPT) -fno-strict-aliasing -fwrapv -fPIC -maes -msse4 \
         $(CXXWARNINGS) -D_GNU_SOURCE -std=c++14  \
-	    -fno-omit-frame-pointer -I$(TOP) -I$(SHAIFHEPATH) -I$(NTLINCPATH) -I$(JSONCPP) -I/usr/local/include -ftls-model
+	    -fno-omit-frame-pointer -I$(TOP) -I$(SHAIFHEPATH) -I$(JSONCPP) -I/usr/local/include -ftls-model
 
 
 LDFLAGS	 := -lpthread -lgmp -lgmpxx
@@ -71,10 +72,10 @@ include justGarble/Makefrag
 include util/Makefrag
 include crypto/Makefrag
 include mpc/Makefrag
-#include tree/Makefrag
-#include protobuf/Makefrag
-#include net/Makefrag
-#include classifiers/Makefrag
+include tree/Makefrag
+include protobuf/Makefrag
+include net/Makefrag
+include classifiers/Makefrag
 
 $(OBJDIR)/.deps: $(foreach dir, $(OBJDIRS), $(wildcard $(OBJDIR)/$(dir)/*.d)) $(PROTO_H)
 	@mkdir -p $(@D)

@@ -39,9 +39,9 @@ Client::Client(boost::asio::io_service& io_service, gmp_randstate_t state,Key_de
 : socket_(io_service),key_deps_desc_(key_deps_desc), gm_(NULL), paillier_(NULL), server_paillier_(NULL), server_gm_(NULL), fhe_context_(NULL), server_fhe_pk_(NULL), fhe_sk_(NULL), n_threads_(2), lambda_(lambda)
 {
     gmp_randinit_set(rand_state_, state);
-    
+
     init_needed_keys(keysize);
-    
+
     ObliviousTransfer::init(OT_SECPARAM);
 }
 
@@ -70,14 +70,14 @@ void Client::init_needed_keys(unsigned int keysize)
     if (key_deps_desc_.need_client_paillier) {
         init_Paillier(keysize);
     }
-    
-    
+
+
     // for FHE keys, we need the FHE context from the server
 //    if (key_deps_desc_.need_client_fhe) {
 //        init_FHE_context();
 //        init_FHE_key();
 //    }
-//    
+//
 //    if (key_deps_desc_.need_server_fhe) {
 //        init_FHE_context();
 //    }
@@ -107,7 +107,7 @@ void Client::init_FHE_context()
     }
     // generate a context. This one should be consisten with the server's one
     // i.e. m, p, r must be the same
-    
+
     fhe_context_ = create_FHEContext(FHE_p,FHE_r,FHE_d,FHE_c,FHE_L,FHE_s,FHE_k,FHE_m);
     // we suppose d > 0
     fhe_G_ = makeIrredPoly(FHE_p, FHE_d);
@@ -117,7 +117,7 @@ void Client::init_FHE_key()
     if (fhe_sk_) {
         return;
     }
-    
+
     fhe_sk_ = new FHESecKey(*fhe_context_);
     fhe_sk_->GenSecKey(FHE_w); // A Hamming-weight-w secret key
 }
@@ -151,18 +151,18 @@ void Client::get_fhe_context()
     if (fhe_context_) {
         return;
     }
-    
+
     Protobuf::FHE_Context c = readMessageFromSocket<Protobuf::FHE_Context>(socket_);
     cout << "Received FHE Context" << endl;
 
     std::istringstream stream(c.content());
-    
+
     unsigned long m, p, r;
     vector<long> gens, ords;
     readContextBase(stream, m, p, r, gens, ords);
-    
+
     fhe_context_ = new FHEcontext(m, p, r, gens, ords);
-    
+
     stream >> (*fhe_context_);
 
     // we suppose d > 0
@@ -174,7 +174,7 @@ void Client::get_server_pk_fhe()
     if (server_fhe_pk_) {
         return;
     }
-    
+
     Protobuf::FHE_PK pk = readMessageFromSocket<Protobuf::FHE_PK>(socket_);
     cout << "Received FHE PK" << endl;
     server_fhe_pk_ = create_from_pk_message(pk,*fhe_context_);
@@ -197,11 +197,11 @@ void Client::send_paillier_pk()
 void Client::send_fhe_pk()
 {
     const FHEPubKey& publicKey = *fhe_sk_; // cast so we only send the public informations
-    
+
     Protobuf::FHE_PK pk_message = get_pk_message(publicKey);
-    
+
     sendMessageToSocket<Protobuf::FHE_PK>(socket_,pk_message);
-    
+
 }
 
 void Client::exchange_keys()
@@ -212,20 +212,20 @@ void Client::exchange_keys()
     if (key_deps_desc_.need_server_paillier) {
         get_server_pk_paillier();
     }
-    
+
     if (key_deps_desc_.need_client_gm) {
         send_gm_pk();
     }
     if (key_deps_desc_.need_client_paillier) {
         send_paillier_pk();
     }
-    
+
     if (key_deps_desc_.need_server_fhe ||
         key_deps_desc_.need_client_fhe) {
         // if we use FHE, we need the context from the server before doing anything
         get_fhe_context();
     }
-    
+
     if (key_deps_desc_.need_server_fhe) {
         get_server_pk_fhe();
     }
@@ -381,7 +381,7 @@ mpz_class Client::enc_comparison_enc_result(const mpz_class &a, const mpz_class 
 {
     Rev_EncCompare_Owner owner = create_rev_enc_comparator_owner(l, comparison_prot);
     owner.set_input(a,b);
-    
+
     return run_rev_enc_comparison_owner_enc_result(owner);
 }
 
@@ -397,7 +397,7 @@ vector<bool> Client::multiple_enc_comparison(const vector<mpz_class> &a, const v
     assert(a.size() == b.size());
     size_t n = a.size();
     vector<EncCompare_Owner*> owners(5);
-    
+
     for (size_t i = 0; i < n; i++) {
         owners[i] = new EncCompare_Owner(create_enc_comparator_owner(l, comparison_prot));
         owners[i]->set_input(a[i],b[i]);
@@ -405,29 +405,29 @@ vector<bool> Client::multiple_enc_comparison(const vector<mpz_class> &a, const v
 
     unsigned int thread_per_job = ceilf(((float)n_threads_)/n);
     multiple_exec_enc_comparison_owner(socket_, owners, lambda_, true, thread_per_job);
-    
+
     vector<bool> results(n);
-    
+
     for (size_t i = 0; i < n; i++) {
         results[i] = owners[i]->output();
         delete owners[i];
     }
-    
+
     return results;
 }
 
 void Client::multiple_help_enc_comparison(const size_t n, const size_t &l, COMPARISON_PROTOCOL comparison_prot)
 {
     vector<EncCompare_Helper*> helpers(5);
-    
+
     for (size_t i = 0; i < n; i++) {
         helpers[i] = new EncCompare_Helper(create_enc_comparator_helper(l, comparison_prot));
-        
+
     }
-   
+
     unsigned int thread_per_job = ceilf(((float)n_threads_)/n);
     multiple_exec_enc_comparison_helper(socket_, helpers, true, thread_per_job);
-    
+
     for (size_t i = 0; i < n; i++) {
         delete helpers[i];
     }
@@ -438,41 +438,41 @@ void Client::multiple_rev_enc_comparison(const vector<mpz_class> &a, const vecto
     assert(a.size() == b.size());
     size_t n = a.size();
     vector<Rev_EncCompare_Owner*> owners(n);
-    
+
     for (size_t i = 0; i < n; i++) {
         owners[i] = new Rev_EncCompare_Owner(create_rev_enc_comparator_owner(l, comparison_prot));
         owners[i]->set_input(a[i],b[i]);
     }
-    
+
     unsigned int thread_per_job = ceilf(((float)n_threads_)/n);
 multiple_exec_rev_enc_comparison_owner(socket_, owners, lambda_, true, thread_per_job);
-    
-    
+
+
     for (size_t i = 0; i < n; i++) {
         delete owners[i];
     }
-    
+
 }
 
 
 vector<bool> Client::multiple_help_rev_enc_comparison(const size_t n, const size_t &l, COMPARISON_PROTOCOL comparison_prot)
 {
     vector<Rev_EncCompare_Helper*> helpers(n);
-    
+
     for (size_t i = 0; i < n; i++) {
         helpers[i] = new Rev_EncCompare_Helper(create_rev_enc_comparator_helper(l, comparison_prot));
-        
+
     }
-    
+
     unsigned int thread_per_job = ceilf(((float)n_threads_)/n);
     multiple_exec_rev_enc_comparison_helper(socket_, helpers, true, thread_per_job);
-    
+
     vector<bool> results(n);
     for (size_t i = 0; i < n; i++) {
         results[i] = helpers[i]->output();
         delete helpers[i];
     }
-    
+
     return results;
 }
 
@@ -480,10 +480,10 @@ size_t Client::run_linear_enc_argmax(Linear_EncArgmax_Owner &owner, COMPARISON_P
 {
     assert(has_paillier_pk());
     assert(has_gm_pk());
-    
+
     size_t nbits = owner.bit_length();
-    function<Comparison_protocol_A*()> comparator_creator;
-    
+    function<Comparison_protocol_A*()> comparator_creator = nullptr;
+
     if (comparison_prot == LSIC_PROTOCOL) {
         comparator_creator = [this,nbits](){ return new LSIC_A(0,nbits,*server_gm_); };
     }else if (comparison_prot == DGK_PROTOCOL){
@@ -493,7 +493,7 @@ size_t Client::run_linear_enc_argmax(Linear_EncArgmax_Owner &owner, COMPARISON_P
     }
 
     exec_linear_enc_argmax(socket_,owner, comparator_creator, lambda_, n_threads_);
-    
+
     return owner.output();
 }
 
@@ -501,10 +501,10 @@ size_t Client::run_tree_enc_argmax(Tree_EncArgmax_Owner &owner, COMPARISON_PROTO
 {
     assert(has_paillier_pk());
     assert(has_gm_pk());
-    
+
     size_t nbits = owner.bit_length();
-    function<Comparison_protocol_A*()> comparator_creator;
-    
+    function<Comparison_protocol_A*()> comparator_creator = nullptr;
+
     if (comparison_prot == LSIC_PROTOCOL) {
         comparator_creator = [this,nbits](){ return new LSIC_A(0,nbits,*server_gm_); };
     }else if (comparison_prot == DGK_PROTOCOL){
@@ -514,7 +514,7 @@ size_t Client::run_tree_enc_argmax(Tree_EncArgmax_Owner &owner, COMPARISON_PROTO
     }
 
     exec_tree_enc_argmax(socket_,owner, comparator_creator, lambda_, n_threads_);
-    
+
     return owner.output();
 }
 
@@ -548,8 +548,8 @@ EncCompare_Owner Client::create_enc_comparator_owner(size_t bit_size, COMPARISON
     assert(has_paillier_pk());
     assert(gm_!=NULL);
 
-    Comparison_protocol_B *comparator;
-    
+    Comparison_protocol_B *comparator = nullptr;
+
     if (comparison_prot == LSIC_PROTOCOL) {
         comparator = new LSIC_B(0,bit_size,*gm_);
     }else if (comparison_prot == DGK_PROTOCOL){
@@ -566,8 +566,8 @@ EncCompare_Helper Client::create_enc_comparator_helper(size_t bit_size, COMPARIS
 {
     assert(paillier_ != NULL);
 
-    Comparison_protocol_A *comparator;
-    
+    Comparison_protocol_A *comparator = nullptr;
+
     if (comparison_prot == LSIC_PROTOCOL) {
         comparator = new LSIC_A(0,bit_size,*server_gm_);
     }else if (comparison_prot == DGK_PROTOCOL){
@@ -575,7 +575,7 @@ EncCompare_Helper Client::create_enc_comparator_helper(size_t bit_size, COMPARIS
     }else if (comparison_prot == GC_PROTOCOL) {
         comparator = new GC_Compare_A(0,bit_size,*server_gm_, rand_state_);
     }
-    
+
     return EncCompare_Helper(bit_size,*paillier_,comparator);
 }
 
@@ -584,8 +584,8 @@ Rev_EncCompare_Owner Client::create_rev_enc_comparator_owner(size_t bit_size, CO
     assert(has_paillier_pk());
     assert(has_gm_pk());
 
-    Comparison_protocol_A *comparator;
-    
+    Comparison_protocol_A *comparator = nullptr;
+
     if (comparison_prot == LSIC_PROTOCOL) {
         comparator = new LSIC_A(0,bit_size,*server_gm_);
     }else if (comparison_prot == DGK_PROTOCOL){
@@ -593,7 +593,7 @@ Rev_EncCompare_Owner Client::create_rev_enc_comparator_owner(size_t bit_size, CO
     }else if (comparison_prot == GC_PROTOCOL) {
         comparator = new GC_Compare_A(0,bit_size,*server_gm_, rand_state_);
     }
-    
+
     return Rev_EncCompare_Owner(0,0,bit_size,*server_paillier_,comparator,rand_state_);
 }
 
@@ -602,8 +602,8 @@ Rev_EncCompare_Helper Client::create_rev_enc_comparator_helper(size_t bit_size, 
     assert(gm_!=NULL);
     assert(paillier_ != NULL);
 
-    Comparison_protocol_B *comparator;
-    
+    Comparison_protocol_B *comparator = nullptr;
+
     if (comparison_prot == LSIC_PROTOCOL) {
         comparator = new LSIC_B(0,bit_size,*gm_);
     }else if (comparison_prot == DGK_PROTOCOL){
@@ -612,6 +612,6 @@ Rev_EncCompare_Helper Client::create_rev_enc_comparator_helper(size_t bit_size, 
     }else if (comparison_prot == GC_PROTOCOL) {
         comparator = new GC_Compare_B(0,bit_size,*gm_, rand_state_);
     }
-    
+
     return Rev_EncCompare_Helper(bit_size,*paillier_,comparator);
 }

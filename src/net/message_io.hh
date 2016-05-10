@@ -23,7 +23,7 @@ std::string show_hex(const CharContainer& c)
     return hex;
 }
 
-static unsigned decode_header(const std::vector<byte>& buf)
+static inline unsigned decode_header(const std::vector<byte>& buf)
 {
     if (buf.size() < HEADER_SIZE)
     return 0;
@@ -33,7 +33,7 @@ static unsigned decode_header(const std::vector<byte>& buf)
     return msg_size;
 }
 
-static void encode_header(std::vector<byte>& buf, unsigned size)
+static inline void encode_header(std::vector<byte>& buf, unsigned size)
 {
     assert(buf.size() >= HEADER_SIZE);
     buf[0] = static_cast<boost::uint8_t>((size >> 24) & 0xFF);
@@ -52,22 +52,22 @@ T readMessageFromSocket(boost::asio::ip::tcp::socket &socket) {
 //    (cerr << "Got header!\n");
 //    (cerr << show_hex(m_readbuf) << endl);
     unsigned msg_len = decode_header(m_readbuf);
-    
+
     m_readbuf.resize(HEADER_SIZE + msg_len);
-    
+
     EXCHANGED_BYTES(HEADER_SIZE + msg_len)
     INTERACTION
-    
+
     boost::asio::mutable_buffers_1 buf = boost::asio::buffer(&m_readbuf[HEADER_SIZE], msg_len);
     boost::asio::read(socket, buf);
     RESUME_BENCHMARK
-    
+
 //    (cerr << "Got body!\n");
 //    (cerr << show_hex(m_readbuf) << endl);
-    
+
     T m;
     m.ParseFromArray(&m_readbuf[HEADER_SIZE], m_readbuf.size() - HEADER_SIZE);
-    
+
 //    RESUME_BENCHMARK
     return m;
 }
@@ -75,17 +75,17 @@ T readMessageFromSocket(boost::asio::ip::tcp::socket &socket) {
 template <class T>
 void sendMessageToSocket(boost::asio::ip::tcp::socket &socket, const T& msg) {
    // PAUSE_BENCHMARK
-    
+
     std::vector<byte> writebuf;
     unsigned msg_size = msg.ByteSize();
-    
+
     writebuf.resize(HEADER_SIZE + msg_size);
-    
+
     EXCHANGED_BYTES(HEADER_SIZE + msg_size);
     INTERACTION
-    
+
     encode_header(writebuf, msg_size);
-    
+
     if (!msg.SerializeToArray(&writebuf[HEADER_SIZE], msg_size)) {
         std::cerr << "Error when serializing" << std::endl;
         return;
