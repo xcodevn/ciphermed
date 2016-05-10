@@ -16,6 +16,6 @@ $(OBJDIR)/libjustGarble.a: $(OBJECTS)
 
 $(OBJECTS): $(OBJDIR)/justGarble/%.o : $(SRCDIR)/%.c
 	@mkdir -p $(@D)
-	cc -MD -c $< -o $@ $(LIBS) $(JG_CFLAGS)
+	clang -MD -c $< -o $@ $(LIBS) $(JG_CFLAGS)
 
 # vim: set noexpandtab:

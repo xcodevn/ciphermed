@@ -116,7 +116,7 @@ FixedPointExp::~FixedPointExp() {
 void FixedPointExp::init() {
     
     m_table = (mpz_t*) malloc(sizeof(mpz_t) * m_numberOfElements);
-    for(int i = 0; i < m_numberOfElements; i++)
+    for(unsigned i = 0; i < m_numberOfElements; i++)
     {
         mpz_init(m_table[i]);
     }

@@ -29,7 +29,7 @@ extern "C" {
 #include <xmmintrin.h>
 #include <emmintrin.h>
 #include <smmintrin.h>
-typedef __m128i block;
+// typedef __m128i block;
 #define xorBlocks(x,y) _mm_xor_si128(x,y)
 #define zero_block() _mm_setzero_si128()
 #define unequal_blocks(x,y) (_mm_movemask_epi8(_mm_cmpeq_epi8(x,y)) != 0xffff)

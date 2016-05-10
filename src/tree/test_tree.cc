@@ -165,9 +165,9 @@ static void fun_with_fhe()
     }
     cerr<<endl;
 
-    p0.random();
-    p1.random();
-    p2.random();
+    // p0.random();
+    // p1.random();
+    // p2.random();
 //    p3.random();
     encode(ea, p3, values);
     
@@ -177,9 +177,9 @@ static void fun_with_fhe()
     ea.encrypt(c2, publicKey, p2);
     ea.encrypt(c3, publicKey, p3);
 
-    p0.mul(p1); c0*=c1; //c0.multiplyBy(c1); //c0.reLinearize(1);
+    // p0.mul(p1); c0*=c1; //c0.multiplyBy(c1); //c0.reLinearize(1);
 //    p0.mul(p3); c0.multiplyBy(c3);
-    p2.mul(p3); c2.multiplyBy(c3);
+    // p2.mul(p3); c2.multiplyBy(c3);
 //    p0.mul(p2); c0.multiplyBy(c2);
     
     cerr << "Levels, KeyId :\n";
@@ -200,13 +200,13 @@ static void fun_with_fhe()
     
     cerr << "\n";
     
-    if (!pp0.equals(p0)) cerr << "oops 0\n";
-    if (!pp1.equals(p1)) cerr << "oops 1\n";
-    if (!pp2.equals(p2)) cerr << "oops 2\n";
-    if (!pp3.equals(p3)) cerr << "oops 3\n";
+    // if (!pp0.equals(p0)) cerr << "oops 0\n";
+    // if (!pp1.equals(p1)) cerr << "oops 1\n";
+    // if (!pp2.equals(p2)) cerr << "oops 2\n";
+    // if (!pp3.equals(p3)) cerr << "oops 3\n";
     
     vector<long> v;
-    pp3.decode(v);
+    // pp3.decode(v);
 //
     pp3.print(cerr);
     
@@ -224,7 +224,7 @@ static void fun_with_fhe()
     
     
     Ctxt b(publicKey);
-    p0.encode(1);
+    encode(ea, p0, 1);
     ea.encrypt(b,publicKey,p0);
     Ctxt b_neg = ctxt_neg(b,ea);
     ea.decrypt(b_neg, secretKey, pp0);
@@ -291,12 +291,12 @@ static void test_selector(size_t n_levels = 3, bool useShallowCircuit = true)
     
     timer = new ScopedTimer("Encode query");
     
-    vector<PlaintextArray> b(n_levels,PlaintextArray(ea));
+    vector<NewPlaintextArray> b(n_levels,NewPlaintextArray(ea));
     vector<Ctxt> c_b(n_levels,Ctxt(publicKey));
     
     
     for (size_t i = 0; i < n_levels; i++) {
-        b[i].encode(bits_query[i]);
+        encode(ea, b[i], bits_query[i]);
         ea.encrypt(c_b[i],publicKey,b[i]);
     }
     
@@ -396,12 +396,12 @@ static void test_selector_tree(size_t n_levels = 3)
     
     timer = new ScopedTimer("Encode query");
     
-    vector<PlaintextArray> b(n_levels,PlaintextArray(ea));
+    vector<NewPlaintextArray> b(n_levels,NewPlaintextArray(ea));
     vector<Ctxt> c_b(n_levels,Ctxt(publicKey));
     
     
     for (size_t i = 0; i < n_levels; i++) {
-        b[i].encode(bits_query[i]);
+        encode(ea, b[i], bits_query[i]);
         ea.encrypt(c_b[i],publicKey,b[i]);
     }
     

@@ -18,6 +18,7 @@
 
 
 #include <wmmintrin.h>
+#include "common.h"
 #include "aes.h"
 
  void AES_128_Key_Expansion(const unsigned char *userkey, void *key) {
